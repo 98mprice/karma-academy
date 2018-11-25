@@ -26,6 +26,7 @@
     "typeit": "^5.10.7",
     "v-blur": "^1.0.2",
     "vue": "^2.1.10",
+    "vue-github-buttons": "^2.1.1",
     "vue-material-design-icons": "^2.3.0",
     "vue-resource": "^1.2.0",
     "vue-router": "^2.2.0",

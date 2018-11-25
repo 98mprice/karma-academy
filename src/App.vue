@@ -18,7 +18,7 @@
             <p>also, you can add characters and backgrounds from the buttons at the top :) have fun!</p>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="primary" flat @click="dialog3=false">let's start!</v-btn>
+            <v-btn color="primary" flat :disabled="!my_username" @click="dialog3=false">let's start!</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -30,6 +30,9 @@
                 <h3>karma academy</h3>
                 <p>a dating sim created by redditors with ❤️</p>
               </v-layout>
+                <v-layout row style="position: absolute; right: 0; top: 0; z-index: 100;" class="pa-3">
+                  <gh-btns-star slug="98mprice/karma-academy" show-count></gh-btns-star>
+                </v-layout>
               <v-dialog
                 v-model="dialog_character"
                 width="500"
@@ -172,7 +175,10 @@
                   <p class="pa-2" v-html="current_panel.text.replace('${player_username}', 'u/' + my_username)"></p>
                   <p class="pl-2 pr-2 red--text" v-if="current_panel.love"><b>+ ❤️ {{current_panel.love}}</b> with {{current_panel.character}}</p>
                   <v-layout row wrap>
-                    <v-btn :disabled="loading_next_options" v-for="panel in next_panels" flat @click="next_panel(panel)">{{panel.option}}</v-btn>
+                    <template v-for="panel in next_panels">
+                      <v-btn v-if="panel.love_req && panel.love_req < your_love[panel.character]" :disabled="loading_next_options" flat @click="next_panel(panel)">{{panel.option}}</v-btn>
+                      <v-btn v-else :disabled="loading_next_options" flat @click="next_panel(panel)">{{panel.option}}</v-btn>
+                    </template>
                     <v-dialog
                       v-model="dialog_option"
                       width="500"
@@ -296,6 +302,9 @@ import Vuetify from 'vuetify'
 import vBlur from 'v-blur'
 import $ from 'jquery'
 import axios from 'axios'
+import VueGitHubButtons from 'vue-github-buttons';
+import 'vue-github-buttons/dist/vue-github-buttons.css';
+Vue.use(VueGitHubButtons);
 
 Vue.use(vBlur)
 
@@ -339,7 +348,8 @@ export default {
       loading_next_options: false,
       test: 'hi this is a test of the <b>typewriter</b>',
       loading_inital: false,
-      dialog3: true
+      dialog3: true,
+      your_love: {}
     }
   },
   computed: {
@@ -410,6 +420,12 @@ export default {
     next_panel: function(panel) {
       this.current_panel = panel
       this.loading_next_options = true
+      if (panel.love) {
+        if (!this.your_love[panel.character]) {
+          this.your_love[panel.character] = 0
+        }
+        this.your_love[panel.character] += panel.love
+      }
       let vm = this
       $.ajax({
         "async": true,
