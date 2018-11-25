@@ -1,4 +1,4 @@
-# findanewyoutuber
+# karma-academy
 
 > A Vue.js project
 
