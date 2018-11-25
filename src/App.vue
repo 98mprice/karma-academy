@@ -1,7 +1,29 @@
 <template>
     <div id="app">
       <v-app>
-        <v-container bg fill-height grid-list-md text-xs-center>
+        <v-dialog v-model="dialog3" max-width="600px" persistent>
+        <v-card>
+          <v-card-title>
+            <span>welcome to karma academy 🗿</span>
+          </v-card-title>
+          <v-card-text>
+            <p>this is a collaborative dating VN</p>
+            <p>feel free to add new paths anywhere. the username in the corner indicates who wrote that path</p>
+            <p>please write your reddit username:</p>
+            <v-text-field
+              v-model="my_username"
+              label="your reddit username"
+              outline
+            ></v-text-field>
+            <p>also, you can add characters and backgrounds from the buttons at the top :) have fun!</p>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="primary" flat @click="dialog3=false">let's start!</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+        <v-slide-y-transition>
+        <v-container bg fill-height grid-list-md text-xs-center v-show="!loading_inital">
           <v-layout row wrap align-center>
             <v-flex xs12>
               <v-layout column>
@@ -147,9 +169,10 @@
                   <h3 style="position: absolute; left: 0; bottom: 0" class="pa-2">{{current_panel.character}}</h3>
                 </div>
                 <v-card flat style="min-height: 100px; border-radius: 0px 0px 20px 20px; text-align: left;">
-                  <p class="pa-2" v-html="current_panel.text"></p>
+                  <p class="pa-2" v-html="current_panel.text.replace('${player_username}', 'u/' + my_username)"></p>
+                  <p class="pl-2 pr-2 red--text" v-if="current_panel.love"><b>+ ❤️ {{current_panel.love}}</b> with {{current_panel.character}}</p>
                   <v-layout row wrap>
-                    <v-btn v-for="panel in next_panels" flat @click="next_panel(panel)">{{panel.option}}</v-btn>
+                    <v-btn :disabled="loading_next_options" v-for="panel in next_panels" flat @click="next_panel(panel)">{{panel.option}}</v-btn>
                     <v-dialog
                       v-model="dialog_option"
                       width="500"
@@ -158,6 +181,7 @@
                         slot="activator"
                         color="pink lighten-3"
                         dark
+                        :disabled="loading_next_options"
                       >
                         <v-icon left>add</v-icon> new path
                       </v-btn>
@@ -261,6 +285,7 @@
             </v-flex>
           </v-layout>
         </v-container>
+        </v-slide-y-transition>
       </v-app>
     </div>
 </template>
@@ -306,11 +331,15 @@ export default {
       background_name: null,
       background_url: null,
       search: null,
-      my_username: 'oppai_suika',
+      my_username: null,
       text: null,
       option: null,
       love_req: 10,
-      background: null
+      background: null,
+      loading_next_options: false,
+      test: 'hi this is a test of the <b>typewriter</b>',
+      loading_inital: false,
+      dialog3: true
     }
   },
   computed: {
@@ -380,6 +409,7 @@ export default {
     },
     next_panel: function(panel) {
       this.current_panel = panel
+      this.loading_next_options = true
       let vm = this
       $.ajax({
         "async": true,
@@ -395,6 +425,7 @@ export default {
         "data": JSON.stringify({ id: panel._id['$oid'] })
       }).done(function (response) {
         vm.next_panels = response
+        vm.loading_next_options = false
       });
     },
     add_character: function() {
@@ -497,6 +528,7 @@ export default {
   },
   mounted: function() {
 
+    this.loading_inital = true
     let vm = this
     $.ajax({
       "async": true,
@@ -529,6 +561,7 @@ export default {
       }).done(function (response) {
         console.log('next panels', JSON.stringify(response))
         vm.next_panels = response
+        vm.loading_inital = false
       });
     });
 
