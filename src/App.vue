@@ -31,8 +31,22 @@
                 <p>a dating sim created by redditors with ❤️</p>
               </v-layout>
                 <v-layout row style="position: absolute; right: 0; top: 0; z-index: 100;" class="pa-3">
+                  <v-btn small flat color="white" @click="go_to_subreddit">r/karma_academy</v-btn>
                   <gh-btns-star slug="98mprice/karma-academy" show-count></gh-btns-star>
                 </v-layout>
+              <v-btn v-if="current_panel"
+                @click="go_back"
+                dark
+                :disabled="current_panel._id['$oid'] == '5bf948978fb0031e9697551d'"
+              >
+                undo
+              </v-btn>
+              <v-btn
+                @click="start_at_beginning"
+                dark
+              >
+                start at the beginning
+              </v-btn>
               <v-dialog
                 v-model="dialog_character"
                 width="500"
@@ -165,7 +179,7 @@
                 <div style="position: relative;">
                   <v-img v-if="current_panel.background" v-blur="true" :src="get_background_url(current_panel.background)" style="border-radius: 20px 20px 0px 0px;"></v-img>
                   <v-img v-else v-blur="true" :src="require('assets/school.png')"></v-img>
-                  <v-btn color="orange" dark flat class="pa-2" style="position: absolute; top: 0; left: 0;" @click="openReddit('oppai_suika')">
+                  <v-btn color="orange" dark flat class="pa-2" style="position: absolute; top: 0; left: 0;" @click="openReddit(current_panel.reddit_username)">
                     <i class="fab fa-reddit-alien"></i> &nbsp; u/{{current_panel.reddit_username}}
                   </v-btn>
                   <v-img v-if="current_panel.character" style="position: absolute; top: 0; height: 100%; width: 40%; left: 0; right: 0; margin: auto; object-fit: scale-down;" :src="get_character_url(current_panel.character)"/>
@@ -349,7 +363,8 @@ export default {
       test: 'hi this is a test of the <b>typewriter</b>',
       loading_inital: false,
       dialog3: true,
-      your_love: {}
+      your_love: {},
+      previous_panel: null
     }
   },
   computed: {
@@ -403,6 +418,9 @@ export default {
     openReddit: function(username) {
       window.open('http://www.reddit.com/u/' + username)
     },
+    go_to_subreddit: function() {
+      window.open('http://www.reddit.com/r/karma_academy')
+    },
     get_character_url: function(character_name) {
       for (let character of this.characters) {
         if (character.name == character_name) {
@@ -418,6 +436,7 @@ export default {
       }
     },
     next_panel: function(panel) {
+      this.previous_panel = this.current_panel
       this.current_panel = panel
       this.loading_next_options = true
       if (panel.love) {
@@ -540,28 +559,10 @@ export default {
         vm.love = 3
         vm.love_req = 10
       });
-    }
-  },
-  mounted: function() {
-
-    this.loading_inital = true
-    let vm = this
-    $.ajax({
-      "async": true,
-      "crossDomain": true,
-      "url": "https://karma-academy.herokuapp.com/get_flows",
-      "method": "POST",
-      "headers": {
-        "Content-Type": "application/json",
-        "cache-control": "no-cache",
-        "Postman-Token": "ada39ab1-6a6c-4f38-b672-8ade1d3cda1f"
-      },
-      "processData": false,
-      "data": "{\n\t\"id\": \"-1\"\n}"
-    }).done(function (response) {
-      console.log(JSON.stringify(response))
-      vm.current_panel = response[0]
-      let current_id = response[0]._id['$oid']
+    },
+    start_at_beginning: function() {
+      this.loading_inital = true
+      let vm = this
       $.ajax({
         "async": true,
         "crossDomain": true,
@@ -573,13 +574,37 @@ export default {
           "Postman-Token": "ada39ab1-6a6c-4f38-b672-8ade1d3cda1f"
         },
         "processData": false,
-        "data": JSON.stringify({ id: current_id })
+        "data": "{\n\t\"id\": \"-1\"\n}"
       }).done(function (response) {
-        console.log('next panels', JSON.stringify(response))
-        vm.next_panels = response
-        vm.loading_inital = false
+        console.log(JSON.stringify(response))
+        vm.current_panel = response[0]
+        let current_id = response[0]._id['$oid']
+        $.ajax({
+          "async": true,
+          "crossDomain": true,
+          "url": "https://karma-academy.herokuapp.com/get_flows",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json",
+            "cache-control": "no-cache",
+            "Postman-Token": "ada39ab1-6a6c-4f38-b672-8ade1d3cda1f"
+          },
+          "processData": false,
+          "data": JSON.stringify({ id: current_id })
+        }).done(function (response) {
+          console.log('next panels', JSON.stringify(response))
+          vm.next_panels = response
+          vm.loading_inital = false
+        });
       });
-    });
+    },
+    go_back: function(){
+      this.next_panel(this.previous_panel)
+    }
+  },
+  mounted: function() {
+
+    this.start_at_beginning()
 
     axios.get('https://karma-academy.herokuapp.com/get_characters')
       .then(res => {
